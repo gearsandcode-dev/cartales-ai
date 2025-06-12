@@ -4,9 +4,32 @@ const DB_NAME = 'CarTalesDB';
 const DB_VERSION = 1;
 const STORIES_STORE = 'stories';
 
+/**
+ * Manages persistent storage of car stories using IndexedDB.
+ * Provides CRUD operations for saving, loading, and managing car stories locally.
+ * 
+ * @example
+ * ```typescript
+ * const storage = new StoryStorage();
+ * await storage.init();
+ * 
+ * // Save a story
+ * await storage.saveStory(myStory);
+ * 
+ * // Get all story metadata
+ * const stories = await storage.getAllStoryMetas();
+ * ```
+ */
 export class StoryStorage {
   private db: IDBDatabase | null = null;
 
+  /**
+   * Initializes the IndexedDB connection and creates the necessary object stores.
+   * Must be called before using any other methods.
+   * 
+   * @throws {Error} When IndexedDB is not available (e.g., in server environment)
+   * @throws {Error} When database initialization fails
+   */
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (typeof window === 'undefined') {
@@ -37,6 +60,13 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Ensures the database is initialized before performing operations.
+   * 
+   * @private
+   * @returns The initialized database instance
+   * @throws {Error} When database is not initialized
+   */
   private ensureDB(): IDBDatabase {
     if (!this.db) {
       throw new Error('Database not initialized. Call init() first.');
@@ -44,6 +74,14 @@ export class StoryStorage {
     return this.db;
   }
 
+  /**
+   * Saves a car story to IndexedDB storage.
+   * If a story with the same ID exists, it will be updated.
+   * 
+   * @param story - The complete story data to save
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When save operation fails
+   */
   async saveStory(story: SavedStory): Promise<void> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -61,6 +99,14 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Retrieves a specific story by its ID.
+   * 
+   * @param id - The unique identifier of the story to retrieve
+   * @returns The complete story data, or null if not found
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When retrieval operation fails
+   */
   async getStory(id: string): Promise<SavedStory | null> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -78,6 +124,15 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Retrieves metadata for all saved stories.
+   * Returns lightweight story information for efficient browsing and listing.
+   * Stories are ordered by most recently updated first.
+   * 
+   * @returns Array of story metadata, sorted by update date (newest first)
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When retrieval operation fails
+   */
   async getAllStoryMetas(): Promise<SavedStoryMeta[]> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -113,6 +168,13 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Permanently deletes a story from storage.
+   * 
+   * @param id - The unique identifier of the story to delete
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When deletion operation fails
+   */
   async deleteStory(id: string): Promise<void> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -130,6 +192,14 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Exports all saved stories as a JSON-serializable array.
+   * Used for creating backups of all story data.
+   * 
+   * @returns Array of all saved stories
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When export operation fails
+   */
   async exportToJSON(): Promise<SavedStory[]> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -147,6 +217,14 @@ export class StoryStorage {
     });
   }
 
+  /**
+   * Imports an array of stories into the database.
+   * Stories with existing IDs will be updated; new stories will be added.
+   * 
+   * @param stories - Array of story data to import
+   * @throws {Error} When database is not initialized
+   * @throws {Error} When import operation fails for any story
+   */
   async importFromJSON(stories: SavedStory[]): Promise<void> {
     const db = this.ensureDB();
     return new Promise((resolve, reject) => {
@@ -179,5 +257,8 @@ export class StoryStorage {
   }
 }
 
-// Create singleton instance
+/**
+ * Singleton instance of StoryStorage for use throughout the application.
+ * Ensures consistent access to the same database connection.
+ */
 export const storyStorage = new StoryStorage();

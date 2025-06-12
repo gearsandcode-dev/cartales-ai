@@ -16,11 +16,24 @@ import { SavedStoryMeta } from '@/types/saved-story';
 import { storyStorage } from '@/utils/story-storage';
 import { formatDistanceToNow } from 'date-fns';
 
+/**
+ * Props for the SavedStoriesDialog component.
+ */
 interface SavedStoriesDialogProps {
+  /** Callback function called when user selects a story to load */
   onLoadStory: (storyId: string) => void;
+  /** Callback function called when user deletes a story */
   onDeleteStory: (storyId: string) => void;
 }
 
+/**
+ * Modal dialog component for browsing and managing saved car stories.
+ * Displays story metadata, provides load/delete functionality, and handles loading states.
+ * 
+ * @param props - The component props
+ * @param props.onLoadStory - Callback for loading a selected story
+ * @param props.onDeleteStory - Callback for deleting a story
+ */
 export function SavedStoriesDialog({ onLoadStory, onDeleteStory }: SavedStoriesDialogProps) {
   const [stories, setStories] = useState<SavedStoryMeta[]>([]);
   const [loading, setLoading] = useState(false);

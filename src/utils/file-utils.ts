@@ -1,6 +1,13 @@
 import { SavedStory } from '@/types/saved-story';
 import { storyStorage } from './story-storage';
 
+/**
+ * Downloads data as a JSON file to the user's device.
+ * Creates a temporary download link and triggers the download automatically.
+ * 
+ * @param data - The story data to export as JSON
+ * @param filename - The name for the downloaded file
+ */
 export function downloadJSON(data: SavedStory[], filename: string): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json',
@@ -15,6 +22,15 @@ export function downloadJSON(data: SavedStory[], filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Prompts the user to select and upload a JSON file containing story data.
+ * Validates the file format and structure before returning the parsed data.
+ * 
+ * @returns Promise that resolves to an array of validated story data
+ * @throws {Error} When no file is selected
+ * @throws {Error} When file format is invalid or cannot be parsed
+ * @throws {Error} When story data structure is invalid
+ */
 export function uploadJSON(): Promise<SavedStory[]> {
   return new Promise((resolve, reject) => {
     const input = document.createElement('input');
@@ -65,6 +81,13 @@ export function uploadJSON(): Promise<SavedStory[]> {
   });
 }
 
+/**
+ * Exports all saved stories to a JSON file and triggers download.
+ * Creates a timestamped filename and handles the complete export process.
+ * 
+ * @throws {Error} When no stories are available to export
+ * @throws {Error} When storage initialization or export fails
+ */
 export async function exportAllStories(): Promise<void> {
   try {
     await storyStorage.init();
@@ -81,6 +104,13 @@ export async function exportAllStories(): Promise<void> {
   }
 }
 
+/**
+ * Imports stories from a user-selected JSON file.
+ * Handles file selection, validation, and storage of the imported data.
+ * 
+ * @returns Promise that resolves to the number of stories successfully imported
+ * @throws {Error} When file selection, parsing, or import fails
+ */
 export async function importStories(): Promise<number> {
   try {
     const stories = await uploadJSON();

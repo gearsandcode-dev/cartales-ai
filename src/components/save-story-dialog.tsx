@@ -15,11 +15,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+/**
+ * Props for the SaveStoryDialog component.
+ */
 interface SaveStoryDialogProps {
+  /** Callback function called when the user saves a story with a title */
   onSave: (title: string) => Promise<void>;
+  /** Optional default title to pre-populate the input field */
   defaultTitle?: string;
 }
 
+/**
+ * Modal dialog component for saving car stories with custom titles.
+ * Provides input validation, error handling, and loading states.
+ * 
+ * @param props - The component props
+ * @param props.onSave - Async callback for saving the story
+ * @param props.defaultTitle - Optional default title for the story
+ */
 export function SaveStoryDialog({ onSave, defaultTitle = '' }: SaveStoryDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(defaultTitle);
