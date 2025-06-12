@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { exportAllStories, importStories, downloadJSON, uploadJSON } from '../file-utils';
+import { exportAllStories, importStories, downloadJSON } from '../file-utils';
 import { storyStorage } from '../story-storage';
 import { SavedStory } from '../../types/saved-story';
 import { initialCarDetails } from '../../types/car-details';
@@ -37,7 +37,7 @@ describe('File Utils', () => {
     });
 
     vi.stubGlobal('Blob', class MockBlob {
-      constructor(public data: any[], public options: any) {}
+      constructor(public data: unknown[], public options: unknown) {}
     });
 
     const mockLink = {
@@ -120,7 +120,7 @@ describe('File Utils', () => {
       const mockInput = {
         type: '',
         accept: '',
-        onchange: null as any,
+        onchange: null as ((event: Event) => void) | null,
         click: vi.fn(),
       };
 
@@ -128,24 +128,17 @@ describe('File Utils', () => {
         type: 'application/json',
       });
 
-      const mockReader = {
-        onload: null as any,
-        onerror: null as any,
-        readAsText: vi.fn(),
-        result: JSON.stringify(mockStories),
-      };
-
       mockCreateElement.mockReturnValue(mockInput);
       vi.stubGlobal('FileReader', class MockFileReader {
-        onload = null as any;
-        onerror = null as any;
+        onload: ((event: ProgressEvent<FileReader>) => void) | null = null;
+        onerror: ((event: ProgressEvent<FileReader>) => void) | null = null;
         result = JSON.stringify(mockStories);
         
         readAsText() {
           // Simulate successful read
           setTimeout(() => {
             if (this.onload) {
-              this.onload({ target: { result: this.result } });
+              this.onload({ target: { result: this.result } } as ProgressEvent<FileReader>);
             }
           }, 0);
         }
@@ -162,7 +155,7 @@ describe('File Utils', () => {
         if (mockInput.onchange) {
           mockInput.onchange({
             target: { files: [mockFile] }
-          } as any);
+          } as unknown as Event);
         }
       }, 0);
 

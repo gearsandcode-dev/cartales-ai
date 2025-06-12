@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
-// import { Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { GitHubCorner } from '@/components/github-corner';
 import { Coffee, Heart } from '@phosphor-icons/react/dist/ssr';
 import pkg from '../../package.json';
 
-// const inter = Inter({
-//   subsets: ['latin'],
-//   display: 'swap',
-//   variable: '--font-inter',
-// });
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: 'Car Tales',
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <GitHubCorner />
         <main className="min-h-screen bg-background">{children}</main>
         <footer className="mb-6 text-center text-sm text-muted-foreground px-4">
