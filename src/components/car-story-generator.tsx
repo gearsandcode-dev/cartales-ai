@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,13 +16,19 @@ import { CarDetails, initialCarDetails } from '../types/car-details';
 import { BasicInfoTab } from './basic-info-tab';
 import { DetailsTab } from './details-tab';
 import { StoryDisplay } from './story-display';
+import { SaveStoryDialog } from './save-story-dialog';
+import { SavedStoriesDialog } from './saved-stories-dialog';
 import { StoryRequest } from '@/types/story-sections';
 import { StoryResponse } from '@/types/story-response';
+import { SavedStory } from '@/types/saved-story';
 import {
   generateOwnershipChain,
   validateOwnershipChain,
 } from '@/utils/ownership-generator';
+import { storyStorage } from '@/utils/story-storage';
+import { exportAllStories, importStories } from '@/utils/file-utils';
 import { CarProfile } from '@phosphor-icons/react/dist/ssr';
+import { Download, Upload } from '@phosphor-icons/react';
 
 interface FieldValidation {
   isValid: boolean;
@@ -38,6 +44,12 @@ export function CarStoryGenerator() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storyParts, setStoryParts] = useState<StoryResponse[]>([]);
+  const [importExportLoading, setImportExportLoading] = useState(false);
+
+  // Initialize storage on component mount
+  useEffect(() => {
+    storyStorage.init().catch(console.error);
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -49,6 +61,76 @@ export function CarStoryGenerator() {
       [name]: value,
     }));
     setError(null);
+  };
+
+  // Story retention methods
+  const generateStoryTitle = (carDetails: CarDetails): string => {
+    const year = carDetails.year || 'Unknown';
+    const make = carDetails.make || 'Car';
+    const model = carDetails.model || '';
+    return `${year} ${make} ${model}`.trim() + ' Story';
+  };
+
+  const handleSaveStory = async (title: string): Promise<void> => {
+    if (storyParts.length === 0) {
+      throw new Error('No story to save. Please generate a story first.');
+    }
+
+    const savedStory: SavedStory = {
+      id: `story-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title,
+      carDetails,
+      storyParts,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await storyStorage.saveStory(savedStory);
+  };
+
+  const handleLoadStory = async (storyId: string): Promise<void> => {
+    try {
+      const story = await storyStorage.getStory(storyId);
+      if (!story) {
+        throw new Error('Story not found');
+      }
+
+      setCarDetails(story.carDetails);
+      setStoryParts(story.storyParts);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load story');
+    }
+  };
+
+  const handleDeleteStory = async (): Promise<void> => {
+    // This is handled by the SavedStoriesDialog component
+    // We don't need to do anything here as the dialog manages the deletion
+  };
+
+  const handleExportStories = async (): Promise<void> => {
+    setImportExportLoading(true);
+    try {
+      await exportAllStories();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export stories');
+    } finally {
+      setImportExportLoading(false);
+    }
+  };
+
+  const handleImportStories = async (): Promise<void> => {
+    setImportExportLoading(true);
+    try {
+      const count = await importStories();
+      setError(null);
+      // Show success message
+      alert(`Successfully imported ${count} stories!`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import stories');
+    } finally {
+      setImportExportLoading(false);
+    }
   };
 
   const handlePreviousOwnersChange = (value: string) => {
@@ -261,7 +343,7 @@ export function CarStoryGenerator() {
             </TabsContent>
           </Tabs>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col gap-4">
           <Button
             onClick={generateCompleteStory}
             variant="gradient"
@@ -277,6 +359,74 @@ export function CarStoryGenerator() {
               'Generate story'
             )}
           </Button>
+          
+          {/* Story Management Controls */}
+          {storyParts.length > 0 && (
+            <div className="flex flex-wrap gap-2 w-full">
+              <SaveStoryDialog
+                onSave={handleSaveStory}
+                defaultTitle={generateStoryTitle(carDetails)}
+              />
+              <SavedStoriesDialog
+                onLoadStory={handleLoadStory}
+                onDeleteStory={handleDeleteStory}
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportStories}
+                  disabled={importExportLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleImportStories}
+                  disabled={importExportLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Import
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Import/Export for empty stories */}
+          {storyParts.length === 0 && (
+            <div className="flex gap-2 w-full">
+              <SavedStoriesDialog
+                onLoadStory={handleLoadStory}
+                onDeleteStory={handleDeleteStory}
+              />
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportStories}
+                  disabled={importExportLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleImportStories}
+                  disabled={importExportLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Import
+                </Button>
+              </div>
+            </div>
+          )}
         </CardFooter>
       </Card>
 
